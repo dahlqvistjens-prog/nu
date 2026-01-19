@@ -1,0 +1,32 @@
+import requests
+import pandas as pd
+import time
+
+API_KEY = "ceaa8a3a0794461aa91110cd1a648798L"  # byt mot din Börsdata API-nyckel
+START_DATE = "2010-01-01"
+
+tickers = pd.read_csv("tickers.csv")["Ticker"].tolist()
+prices_df = pd.DataFrame()
+
+for ticker in tickers:
+    url = f"https://apis.borsdata.se/v1/price/stock/{ticker}?from={START_DATE}&authKey={API_KEY}"
+    resp = requests.get(url)
+    if resp.status_code != 200:
+        print(f"Fel för {ticker}: {resp.status_code}")
+        continue
+    data = resp.json()
+    if not data:
+        continue
+    df = pd.DataFrame(data)
+    df = df[["date", "close", "volume"]]
+    df.columns = ["Date", f"{ticker}_Close", f"{ticker}_Volume"]
+    if prices_df.empty:
+        prices_df = df
+    else:
+        prices_df = pd.merge(prices_df, df, on="Date", how="outer")
+    time.sleep(0.2)
+
+prices_df["Date"] = pd.to_datetime(prices_df["Date"])
+prices_df.sort_values("Date", inplace=True)
+prices_df.to_csv("OMXSPI_PRICES.csv", index=False)
+print("OMXSPI_PRICES.csv uppdaterad!")

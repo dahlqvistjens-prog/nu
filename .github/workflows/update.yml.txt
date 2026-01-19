@@ -1,0 +1,27 @@
+name: Update OMXSPI Prices
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # kör varje dag kl 08:00 UTC
+  workflow_dispatch:      # möjlighet att köra manuellt
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install dependencies
+        run: pip install pandas requests
+      - name: Run fetch script
+        run: python fetch_omxspi.py
+      - name: Commit CSV
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add OMXSPI_PRICES.csv
+          git commit -m "Update OMXSPI_PRICES.csv"
+          git push
